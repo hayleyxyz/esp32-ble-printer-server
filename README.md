@@ -1,1 +1,1 @@
-# ESP32 BLE Printer Client
+# ESP32 BLE Printer Server

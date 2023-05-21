@@ -32,3 +32,35 @@ void PrinterPacket::makePacketUInt8(uint8_t command, uint8_t data, uint8_t *dst,
 {
     makePacket(command, &data, sizeof(data), dst, dstLength);
 }
+
+bool PrinterPacket::dissectPacket(uint8_t *packet, size_t packetLength, PacketHeader* header, uint8_t **outData, PacketFooter* footer)
+{
+    if (packetLength < sizeof(PacketHeader) + sizeof(PacketFooter))
+    {
+        return false;
+    }
+
+    memcpy(header, packet, sizeof(PacketHeader));
+
+    if (header->magic != 0x7851)
+    {
+        return false;
+    }
+
+    if (packetLength < sizeof(PacketHeader) + header->length.length16 + sizeof(PacketFooter))
+    {
+        return false;
+    }
+
+    if (outData != nullptr)
+    {
+        *outData = packet + sizeof(PacketHeader);
+    }
+
+    if (footer != nullptr)
+    {
+        memcpy(footer, packet + sizeof(PacketHeader) + header->length.length16, sizeof(PacketFooter));
+    }
+
+    return true;
+}
