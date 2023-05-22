@@ -28,6 +28,8 @@ public:
     static void makePacket(uint8_t command, uint8_t *data, size_t dataLength, uint8_t *dst, size_t dstLength);
     static void makePacketUInt8(uint8_t command, uint8_t data, uint8_t *dst, size_t dstLength);
     static bool dissectPacket(uint8_t *packet, size_t packetLength, PacketHeader* header, uint8_t **outData = nullptr, PacketFooter* footer = nullptr);
+    static bool isPacket(uint8_t *data, size_t length);
+    static size_t getPacketLength(size_t dataLength);
 
     constexpr static size_t getPacketLength(size_t dataLength)
     {

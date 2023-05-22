@@ -52,15 +52,29 @@ String printerCommandToString(uint8_t command)
     }
 }
 
+void hex_dump(uint8_t *data, size_t length)
+{
+    for (int i = 0; i < length; i++) {
+        if (data[i] < 0x10) {
+            Serial.print("0"); 
+        }
+
+        Serial.print(String(data[i], HEX) + " ");
+    }
+
+    Serial.println();
+}
+
 class ApplicationBLECharacteristicCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
         auto data = pCharacteristic->getData();
         auto length = pCharacteristic->getLength();
+        auto packetStart = data;
 
         PacketHeader header;
         uint8_t *packetData = nullptr;
 
-        if (!PrinterPacket::dissectPacket(data, length, &header, &packetData))
+        if (!PrinterPacket::dissectPacket(packetStart, length, &header, &packetData))
         {
             Serial.print("Invalid packet: ");
 
@@ -89,15 +103,14 @@ class ApplicationBLECharacteristicCallbacks : public BLECharacteristicCallbacks 
 
         Serial.print("Command: " + printerCommandToString(header.command) + "(" + String(header.command, HEX) + ") ");
 
-        for (int i = 0; i < header.length.length16; i++) {
-            if (packetData[i] < 0x10) {
-                Serial.print("0"); 
-            }
+        if (header.command == 0xf2) {
+            Serial.println();
 
-            Serial.print(String(packetData[i], HEX) + " ");
+            hex_dump(data, length);
         }
-
-        Serial.println();
+        else {
+            hex_dump(packetData, header.length.length16);
+        }
     }
 
     void onNotify(BLECharacteristic *pCharacteristic) {
@@ -110,8 +123,42 @@ class ApplicationBLECharacteristicCallbacks : public BLECharacteristicCallbacks 
     }
 };
 
+void print_chip_info() {
+    esp_chip_info_t chip_info;
+
+    esp_chip_info(&chip_info);
+
+    Serial.println(ESP.getChipModel());
+
+    Serial.print("Features: ");
+
+    std::vector<String> featureStrings;
+
+    if (chip_info.features & CHIP_FEATURE_BT) featureStrings.push_back("Bluetooth Classic");
+    if (chip_info.features & CHIP_FEATURE_BLE) featureStrings.push_back("Bluetooth LE");
+    if (chip_info.features & CHIP_FEATURE_WIFI_BGN) featureStrings.push_back("2.4GHz WiFi");
+    if (chip_info.features & CHIP_FEATURE_EMB_FLASH) featureStrings.push_back("Embedded flash memory");
+
+    for (int i = 0; i < featureStrings.size(); i++) {
+        Serial.print(featureStrings[i]);
+
+        if (i < featureStrings.size() - 1) {
+            Serial.print(", ");
+        }
+    }
+
+    Serial.println();
+    
+    Serial.printf("Cores: %d, ", chip_info.cores);
+    Serial.printf("silicon revision %d, ", chip_info.revision);
+    Serial.printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+        (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+}
+
 void setup() {
     Serial.begin(115200);
+
+    print_chip_info();
 
     callbacks = new ApplicationBLECharacteristicCallbacks();
 
@@ -133,6 +180,8 @@ void setup() {
     pAdvertising->setMinPreferred(0x06);
     pAdvertising->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
+
+    Serial.println("BLE ready");
 }
 
 void loop() {
