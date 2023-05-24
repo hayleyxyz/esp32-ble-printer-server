@@ -11,17 +11,16 @@ void PrinterPacket::makePacket(uint8_t command, uint8_t *data, size_t dataLength
     assert(dstLength >= sizeof(PacketHeader) + dataLength + sizeof(PacketFooter));
 
     PacketHeader header;
-    header.magic = 0x7851;
+    header.magic = PrinterPacket::Magic;
     header.command = command;
     header.direction = 0x00;
-    header.length.length8.low = dataLength & 0xff;
-    header.length.length8.high = (dataLength >> 8) & 0xff;
+    header.length = dataLength;
 
     uint8_t checksum = Checksum8Bit::calculate(data, dataLength);
 
     PacketFooter footer;
     footer.checksum = checksum;
-    footer.end = 0xff;
+    footer.end = PrinterPacket::End;
 
     memcpy(dst, &header, sizeof(header));
     memcpy(dst + sizeof(header), data, dataLength);
@@ -33,23 +32,23 @@ void PrinterPacket::makePacketUInt8(uint8_t command, uint8_t data, uint8_t *dst,
     makePacket(command, &data, sizeof(data), dst, dstLength);
 }
 
-bool PrinterPacket::dissectPacket(uint8_t *packet, size_t packetLength, PacketHeader* header, uint8_t **outData, PacketFooter* footer)
+bool PrinterPacket::dissectPacket(uint8_t *packet, size_t packetLength, PacketHeader** header, uint8_t **outData, PacketFooter** footer)
 {
-    if (packetLength < sizeof(PacketHeader) + sizeof(PacketFooter))
+    if (packetLength < sizeof(PacketHeader))
     {
         return false;
     }
 
-    memcpy(header, packet, sizeof(PacketHeader));
+    PacketHeader* headerPtr = reinterpret_cast<PacketHeader*>(packet);
 
-    if (header->magic != 0x7851)
+    if (headerPtr->magic != 0x7851)
     {
         return false;
     }
 
-    if (packetLength < sizeof(PacketHeader) + header->length.length16 + sizeof(PacketFooter))
+    if (header != nullptr)
     {
-        return false;
+        *header = headerPtr;
     }
 
     if (outData != nullptr)
@@ -57,9 +56,9 @@ bool PrinterPacket::dissectPacket(uint8_t *packet, size_t packetLength, PacketHe
         *outData = packet + sizeof(PacketHeader);
     }
 
-    if (footer != nullptr)
+    if (footer != nullptr && packetLength >= sizeof(PacketHeader) + headerPtr->length + sizeof(PacketFooter))
     {
-        memcpy(footer, packet + sizeof(PacketHeader) + header->length.length16, sizeof(PacketFooter));
+        *footer = reinterpret_cast<PacketFooter*>(packet + sizeof(PacketHeader) + headerPtr->length);
     }
 
     return true;
