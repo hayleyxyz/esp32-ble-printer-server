@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "PrinterPacket.h"
+#include <PrinterPacket.h>
 
 class StreamingPacketParser
 {

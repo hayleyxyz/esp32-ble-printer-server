@@ -1,10 +1,9 @@
 #include <Arduino.h>
+#include <PrinterCommand.h>
+#include <Checksum8Bit.h>
 #include "StreamingPacketParser.h"
-#include "PrinterCommand.h"
-#include "Checksum8Bit.h"
 
-void StreamingPacketParser::parse(uint8_t* data, size_t length)
-{
+void StreamingPacketParser::parse(uint8_t* data, size_t length) {
     size_t remainingDataLength = length;
 
     if (state == ParseState::Data) {
@@ -75,12 +74,12 @@ void StreamingPacketParser::parse(uint8_t* data, size_t length)
 
             if (remainingPacketFooterLength == 1) {
                 if (*footerData != PrinterPacket::End) {
-                    printf("Invalid packet: end byte not found\n");
+                    printf("Unexpected: end byte not found\n");
                 }
             }
             else if (remainingPacketFooterLength == 2) {
                 if (*footerData != checksum) {
-                    printf("Invalid packet: checksum mismatch. Expected: %02x, actual: %02x\n", checksum,  *footerData);
+                    printf("Unexpected: checksum mismatch. Expected: %02x, actual: %02x\n", checksum,  *footerData);
                 }
             }
 
@@ -96,7 +95,5 @@ void StreamingPacketParser::parse(uint8_t* data, size_t length)
                 return;
             }
         }
-
-        printf("end remainingPacketFooterLength: %d, remainingDataLength: %d\n", remainingPacketFooterLength, remainingDataLength);
     }
 }
