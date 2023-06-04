@@ -47,7 +47,7 @@ void StreamingPacketParser::parse(uint8_t* data, size_t length) {
 
         checksum = 0;
 
-        printf("Command: (%x) %s\n", header->command, printerCommandToString(header->command));
+        printf("Command: (%x) %s | ", header->command, printerCommandToString(header->command));
 
         state = ParseState::Data;
     }
@@ -91,9 +91,12 @@ void StreamingPacketParser::parse(uint8_t* data, size_t length) {
             state = ParseState::Header;
 
             if (remainingDataLength > 0) {
+                putchar('\n');
                 parse(data + (length - remainingDataLength), remainingDataLength);
                 return;
             }
         }
+
+        putchar('\n');
     }
 }

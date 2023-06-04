@@ -36,7 +36,7 @@ class ApplicationBLECharacteristicCallbacks : public BLECharacteristicCallbacks 
 
         streamingPacketParser->parse(pCharacteristic->getData(), pCharacteristic->getLength());
 
-        auto taskStatus = esp_task_wdt_status(nullptr);
+        fflush(stdout);
     }
 };
 
@@ -112,17 +112,23 @@ void ble_server_init() {
 void setup() {
     Serial.begin(115200);
 
-    // Disable the watchdog on both CPUs
+    // Disable the watchdog on all CPUs
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
         auto handle = xTaskGetCurrentTaskHandleForCPU(x);
         if (esp_task_wdt_status(handle) == ESP_OK) {
             esp_task_wdt_delete(handle);
         }
     }
-    
+
     ble_server_init();
 }
 
 void loop() {
-    //
+    auto c = getchar();
+
+    if (c == '\n') {
+        putchar('\n');
+    }
+    
+    delay(10);
 }
