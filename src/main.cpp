@@ -6,7 +6,7 @@
 #include <freertos/task.h>
 #include <PrinterPacket.h>
 #include <util.h>
-#include "StreamingPacketParser.h"
+#include <StreamingPacketParser.h>
 #include "net.h"
 
 class ApplicationBLECharacteristicCallbacks;
