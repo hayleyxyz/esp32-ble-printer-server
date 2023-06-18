@@ -54,12 +54,12 @@ class ApplicationBLEServerCallbacks : public BLEServerCallbacks {
     void onDisconnect(BLEServer *pServer) {
         printf("onDisconnect\n");
         delay(100);
-
+        
         esp_restart();
     }
 
     void onMtuChanged(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
-        printf("onMtuChanged\n");
+        printf("onMtuChanged: %d\n", param->mtu.mtu);
     }
 };
 
@@ -111,6 +111,8 @@ void ble_server_init() {
 
 void setup() {
     Serial.begin(115200);
+    
+    printf("ESP32 Printer Server\n");
 
     // Disable the watchdog on all CPUs
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
@@ -129,6 +131,6 @@ void loop() {
     if (c == '\n') {
         putchar('\n');
     }
-    
+
     delay(10);
 }
